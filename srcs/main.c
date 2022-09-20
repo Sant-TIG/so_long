@@ -253,35 +253,69 @@ void	ft_draw_map(t_game *game)
 	ft_draw_collectible(game);
 }
 
+void	ft_delete_nth_node(t_pos **coord, int pos)
+{
+	t_pos	*tmp;
+	t_pos	*prev;
+
+	tmp = *coord;
+	prev = *coord;
+	if (pos == 1)
+	{
+		*coord = tmp->next;
+		free(tmp);
+	}
+	while (tmp && --pos)
+		tmp = tmp->next;
+	while (prev->next != tmp)
+		prev = prev->next;
+	prev->next = tmp->next;
+	free(tmp);
+}
+
+void	ft_search_collectible(t_game *game, int x, int y)
+{
+	t_pos	*tmp;
+	int		pos;
+
+	pos = -1;
+	tmp = game->collectibles_pos;
+	while (tmp && ++pos)
+	{
+		if (tmp->coord[0] == x && tmp->coord[1] == y)
+			ft_delete_nth_node(&game->collectibles_pos, pos);
+		else
+			tmp = tmp->next;
+	}
+
+}
+
 void	ft_move_up(t_game *game)
 {
 	char	next_pos;
 
-	next_pos = game->map[game->player_pos->coord[0]][game->player_pos->coord[1] - 1];
+	//game->player_pos->coord[0]++;
+	next_pos = game->map[game->player_pos->coord[1] + 1][game->player_pos->coord[0]];
 	if (next_pos == '1')
 		return ;
 	if (next_pos == '0')
 	{
-		mlx_put_image_to_window(game->mlx, game->window, game->imgs->background, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
-		game->player_pos->coord[1] -= 1;
-		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
 		game->movements++;
+		mlx_put_image_to_window(game->mlx, game->window, game->imgs->background, game->resolution * game->player_pos->coord[0], game->resolution * game->player_pos->coord[1]);
+		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->resolution * game->player_pos->coord[0], game->resolution * --game->player_pos->coord[1]);
 	}
-	if (next_pos == 'E')
+	else if (next_pos == 'C' && --game->collectibles)
 	{
-		game->player_pos->coord[1] -= 1;
-		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
-		if (game->collectibles == 0)
-			ft_end_game(game);
-	}
-	if (next_pos == 'C' && game->collectibles--)
-	{
-		//printeo en la antigua popsicion del personaje como si fuera background
+		ft_search_collectible(game, game->player_pos->coord[0], game->player_pos->coord[1]);
 		mlx_put_image_to_window(game->mlx, game->window, game->imgs->background, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
-		game->player_pos->coord[1] -= 1;
-		//ahora printeo al personaje en una posicion arriba
+		mlx_put_image_to_window(game->mlx, game->window, game->imgs->background, game->player_pos->coord[0] * game->resolution, --game->player_pos->coord[1] * game->resolution);
 		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
+	}
+	else if (next_pos == 'E' && game->collectibles == 0)
+	{
+		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->player_pos->coord[0] * game->resolution, --game->player_pos->coord[1] * game->resolution);	
 		game->movements++;
+		ft_end_game(game);
 	}
 }
 
@@ -289,31 +323,28 @@ void	ft_move_left(t_game *game)
 {
 	char	next_pos;
 
-	next_pos = game->map[game->player_pos->coord[0]][game->player_pos->coord[1] - 1];
+	//game->player_pos->coord[0]++;
+	next_pos = game->map[game->player_pos->coord[1]][game->player_pos->coord[0] - 1];
 	if (next_pos == '1')
 		return ;
 	if (next_pos == '0')
 	{
-		mlx_put_image_to_window(game->mlx, game->window, game->imgs->background, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
-		game->player_pos->coord[0] -= 1;
-		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
 		game->movements++;
+		mlx_put_image_to_window(game->mlx, game->window, game->imgs->background, game->resolution * game->player_pos->coord[0], game->resolution * game->player_pos->coord[1]);
+		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->resolution * --game->player_pos->coord[0], game->resolution * game->player_pos->coord[1]);
 	}
-	else if (next_pos == 'E')
+	else if (next_pos == 'C' && --game->collectibles)
 	{
-		game->player_pos->coord[0] -= 1;
-		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
-		if (game->collectibles == 0)
-			ft_end_game(game);
-	}
-	else if (next_pos == 'C' && game->collectibles--)
-	{
-		//printeo en la antigua popsicion del personaje como si fuera background
+		ft_search_collectible(game, game->player_pos->coord[0], game->player_pos->coord[1]);
 		mlx_put_image_to_window(game->mlx, game->window, game->imgs->background, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
-		game->player_pos->coord[0] -= 1;
-		//ahora printeo al personaje en una posicion arriba
+		mlx_put_image_to_window(game->mlx, game->window, game->imgs->background, --game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
 		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
+	}
+	else if (next_pos == 'E' && game->collectibles == 0)
+	{
+		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, --game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);	
 		game->movements++;
+		ft_end_game(game);
 	}
 }
 
@@ -321,31 +352,28 @@ void	ft_move_down(t_game *game)
 {
 	char	next_pos;
 
-	next_pos = game->map[game->player_pos->coord[0]][game->player_pos->coord[1] - 1];
+	//game->player_pos->coord[0]++;
+	next_pos = game->map[game->player_pos->coord[1] + 1][game->player_pos->coord[0]];
 	if (next_pos == '1')
 		return ;
 	if (next_pos == '0')
 	{
-		mlx_put_image_to_window(game->mlx, game->window, game->imgs->background, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
-		game->player_pos->coord[1] += 1;
-		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
 		game->movements++;
+		mlx_put_image_to_window(game->mlx, game->window, game->imgs->background, game->resolution * game->player_pos->coord[0], game->resolution * game->player_pos->coord[1]);
+		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->resolution * game->player_pos->coord[0], game->resolution * ++game->player_pos->coord[1]);
 	}
-	else if (next_pos == 'E')
+	else if (next_pos == 'C' && --game->collectibles)
 	{
-		game->player_pos->coord[1] += 1;
-		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
-		if (game->collectibles == 0)
-			ft_end_game(game);
-	}
-	else if (next_pos == 'C' && game->collectibles--)
-	{
-		//printeo en la antigua popsicion del personaje como si fuera background
+		ft_search_collectible(game, game->player_pos->coord[0], game->player_pos->coord[1]);
 		mlx_put_image_to_window(game->mlx, game->window, game->imgs->background, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
-		game->player_pos->coord[1] += 1;
-		//ahora printeo al personaje en una posicion arriba
+		mlx_put_image_to_window(game->mlx, game->window, game->imgs->background, game->player_pos->coord[0] * game->resolution, ++game->player_pos->coord[1] * game->resolution);
 		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
+	}
+	else if (next_pos == 'E' && game->collectibles == 0)
+	{
+		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->player_pos->coord[0] * game->resolution, ++game->player_pos->coord[1] * game->resolution);	
 		game->movements++;
+		ft_end_game(game);
 	}
 }
 
@@ -353,33 +381,31 @@ void	ft_move_right(t_game *game)
 {
 	char	next_pos;
 
-	next_pos = game->map[game->player_pos->coord[0]][game->player_pos->coord[1] - 1];
+	//game->player_pos->coord[0]++;
+	next_pos = game->map[game->player_pos->coord[1]][game->player_pos->coord[0] + 1];
 	if (next_pos == '1')
 		return ;
 	if (next_pos == '0')
 	{
-		mlx_put_image_to_window(game->mlx, game->window, game->imgs->background, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
-		game->player_pos->coord[0] += 1;
-		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
 		game->movements++;
+		mlx_put_image_to_window(game->mlx, game->window, game->imgs->background, game->resolution * game->player_pos->coord[0], game->resolution * game->player_pos->coord[1]);
+		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->resolution * ++game->player_pos->coord[0], game->resolution * game->player_pos->coord[1]);
 	}
-	else if (next_pos == 'E')
+	else if (next_pos == 'C' && --game->collectibles)
 	{
-		game->player_pos->coord[0] += 1;
-		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
-		if (game->collectibles == 0)
-			ft_end_game(game);
-	}
-	else if (next_pos == 'C' && game->collectibles--)
-	{
-		//printeo en la antigua popsicion del personaje como si fuera background
+		ft_search_collectible(game, game->player_pos->coord[0], game->player_pos->coord[1]);
 		mlx_put_image_to_window(game->mlx, game->window, game->imgs->background, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
-		game->player_pos->coord[0] += 1;
-		//ahora printeo al personaje en una posicion arriba
+		mlx_put_image_to_window(game->mlx, game->window, game->imgs->background, ++game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
 		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);
+	}
+	else if (next_pos == 'E' && game->collectibles == 0)
+	{
+		mlx_put_image_to_window(game->mlx, game->window, game->imgs->player, ++game->player_pos->coord[0] * game->resolution, game->player_pos->coord[1] * game->resolution);	
 		game->movements++;
+		ft_end_game(game);
 	}
 }
+
 int	ft_process_input(int keycode, t_game *game)
 {
 	if (keycode == 13 || keycode == 126)// W
